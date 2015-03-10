@@ -59,7 +59,7 @@
 	};
 
 	JSMapr.prototype.setLocSeparator = function(newSep) {
-		if (isString(newSep)) {
+		if (isString(newSep) && newSep.length === 1) {
 			sep = newSep;
 		}
 	};
@@ -72,7 +72,7 @@
 
 	function isLocValid(loc) {
 		// root is ok
-		if (loc === "/") return true;
+		if (loc === sep) return true;
 
 		var locArray = loc.split(sep);
 
@@ -88,7 +88,7 @@
 
 	function isSubLoc(parent, child) {
 		if (parent == child.substring(0,parent.length) &&
-			child[parent.length] === "/") {
+			child[parent.length] === sep) {
 			return true;
 		}
 		return false;
@@ -96,7 +96,7 @@
 
 	function getObjectAtLoc(srcObj, loc) {
 
-		if (loc === "/") {
+		if (loc === sep) {
 			// object at root is srcObj
 			return srcObj;
 		}
@@ -127,7 +127,7 @@
 
 	function setObjectAtLoc(srcObj, loc, newObj) {
 
-		if (loc === "/") {
+		if (loc === sep) {
 			// replacing root with newObj
 			return newObj;
 		}
@@ -154,7 +154,7 @@
 
 	function deleteObjectAtLoc(srcObj, loc) {
 
-		if (loc === "/") {
+		if (loc === sep) {
 			// deleting root not supported
 			return false;
 		}
@@ -205,7 +205,7 @@
 
 		var val = getObjectAtLoc(srcObj, srcLoc);
 		if (val !== undefined) {
-			if (destLoc === "/") {
+			if (destLoc === sep) {
 			  // can't copy to root (must have a name)
 			  return srcObj;
 			}
@@ -224,13 +224,13 @@
 
 		var val = getObjectAtLoc(srcObj, srcLoc);
 		if (val !== undefined) {
-			if (srcLoc === "/") {
+			if (srcLoc === sep) {
 				// wrapping root
 				var newRoot = {};
 				srcObj = setObjectAtLoc(newRoot, destLoc, val);
 				return srcObj;
 			}
-			else if (destLoc === "/") {
+			else if (destLoc === sep) {
 			  // moving this to root, validate that this is an object or array
 			  if (isObjectOrArray(val)) {
 				// replace srcObj with val
@@ -280,7 +280,7 @@
 			srcObj = setObjectAtLoc(srcObj, loc, []);
 		} else if (isArray(val)) {
 			// already an array, do nothing
-		} else if (val === Object(val)) {
+		} else if (isObject(val)) {
 			// this is an object, wrap it in an array
 			srcObj = setObjectAtLoc(srcObj, loc, [ val ]);
 		} else {
