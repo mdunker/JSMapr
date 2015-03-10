@@ -4,7 +4,7 @@
 (function () {
 
 	var sep = "/";
-	var mapArray = [];
+	var mapCommands = [];
 	var logFunc = null;
 
 	function log() {
@@ -49,9 +49,12 @@
 		}
 	};
 
-	JSMapr.prototype.setMapArray = function(newMapArray) {
-		if (isArray(newMapArray)) {
-		  mapArray = newMapArray;
+	JSMapr.prototype.setMapCommands = function(newCommands) {
+		if (isArray(newCommands)) {
+		  mapCommands = newCommands;
+		} else if (isObject(newCommands) && isString(newCommands.op)) {
+			// looks like a single mapping object, wrap in array
+			mapCommands = [ newCommands ];
 		}
 	};
 
@@ -111,6 +114,15 @@
 		}
 
 		return navObj && p ? (navObj[p]) : undefined;
+	}
+
+	function getTypeofLoc(srcObj, loc) {
+		var val = getObjectAtLoc(srcObj, loc);
+
+		// check null and array first, typeof them === 'object'
+		if (val === null) return "null";
+		else if (isArray(val)) return "array";
+		else return typeof val; // string, number, boolean, object
 	}
 
 	function setObjectAtLoc(srcObj, loc, newObj) {
@@ -278,29 +290,41 @@
 		return srcObj;
 	}
 
-	function opMap1(srcObj, loc, opMapArray) {
+	function opMap1(srcObj, loc, opMap) {
 		// if not valid location, abort
 		if (!isLocValid(loc)) return srcObj;
+		if (!isObjectOrArray(opMap)) return srcObj;
 
 		var val = getObjectAtLoc(srcObj, loc);
 		if (val !== undefined) {
-			val = doMap(val, opMapArray);
+			// if opMap is not an array, make it a single element array
+			if (!isArray(opMap)) {
+				opMap = [ opMap ];
+			}
+			val = doMap(val, opMap);
 			srcObj = setObjectAtLoc(srcObj, loc, val);
 		}
 		return srcObj;
 	}
 
-	function opMapEach(srcObj, loc, opMapArray) {
+	function opMapEach(srcObj, loc, opMap) {
 		// if not valid location, abort
 		if (!isLocValid(loc)) return srcObj;
+		if (!isObjectOrArray(opMap)) return srcObj;
 
 		var ary = getObjectAtLoc(srcObj, loc);
 
 		// ary should be an array
 		if (isArray(ary)) {
+			// if opMap is not an array, make it a single element array
+			if (!isArray(opMap)) {
+				opMap = [ opMap ];
+			}
 			for (var i = 0, aryLen=ary.length; i < aryLen; i++) {
 				var val = ary[i];
-				ary[i] = doMap(val, opMapArray);
+				if (val !== undefined) {
+					ary[i] = doMap(val, opMap);
+				}
 			}
 			srcObj = setObjectAtLoc(srcObj, loc, ary);
 		}
@@ -341,9 +365,69 @@
 		return fn(srcObj, parms);
 	}
 
-	function doMap(srcObj, mapArray) {
-		for (var i = 0, mapArrayLen = mapArray.length; i < mapArrayLen; i++) {
-			var mapObj = (mapArray)[i];
+	function opIf(srcObj, condition, trueMap, falseMap) {
+		if (!isObjectOrArray(trueMap)) return srcObj;
+		if (falseMap && !isObjectOrArray(falseMap)) return srcObj;
+
+		if (condition === true)
+		{
+			// if trueMap is not an array, make it a single element array
+			if (!isArray(trueMap)) {
+				trueMap = [ trueMap ];
+			}
+			srcObj = doMap(srcObj, trueMap);
+		}
+		else if (falseMap && condition === false) {
+			if (!isArray(falseMap)) {
+				falseMap = [ falseMap ];
+			}
+			srcObj = doMap(srcObj, falseMap);
+		}
+		return srcObj;
+	}
+
+	function opIfExists(srcObj, loc, trueMap, falseMap) {
+		if (!isLocValid(loc)) return srcObj;
+		return opIf(srcObj, getObjectAtLoc(srcObj, loc) !== undefined, trueMap, falseMap);
+	}
+
+	function opIfEqual(srcObj, loc, val, trueMap, falseMap) {
+		if (!isLocValid(loc)) return srcObj;
+		return opIf(srcObj, getObjectAtLoc(srcObj, loc) === val, trueMap, falseMap);
+	}
+
+	function opIfType(srcObj, loc, typeStr, trueMap, falseMap) {
+		if (!isLocValid(loc)) return srcObj;
+		if (!isString(typeStr)) return srcObj;
+
+		var locType = getTypeofLoc(srcObj, loc);
+		var typeArray = typeStr.split(' ');
+		var wasFound = false;
+		for (var i = 0, aLen = typeArray.length; i < aLen; i++) {
+			if (locType === typeArray[i]) {
+				wasFound = true;
+				break;
+			}
+		}
+
+		return opIf(srcObj, wasFound, trueMap, falseMap);
+	}
+
+	function opIfFunc(srcObj, loc, fn, parms, trueMap, falseMap) {
+		if (!isLocValid(loc)) return srcObj;
+
+		var val = getObjectAtLoc(srcObj, loc);
+
+		return opIf(srcObj, fn(val, parms) === true, trueMap, falseMap);
+	}
+
+	function doMap(srcObj, map) {
+		// if map is not an array (probably a single map object), make it a single element array
+		if (!isArray(map)) {
+			map = [ map ];
+		}
+		for (var i = 0, mapLen = map.length; i < mapLen; i++) {
+			var mapObj = (map)[i];
 			switch (mapObj.op) {
 				case "ADD":
 					log("Op: setting object at", mapObj.loc);
@@ -382,12 +466,12 @@
 					break;
 				case "MAP1":
 					log("Op: mapping", mapObj.loc);
-					srcObj = opMap1(srcObj, mapObj.loc, mapObj.mapArray);
+					srcObj = opMap1(srcObj, mapObj.loc, mapObj.map);
 					log("Updated:", srcObj);
 					break;
 				case "MAPEACH":
 					log("Op: mapping each of", mapObj.loc);
-					srcObj = opMapEach(srcObj, mapObj.loc, mapObj.mapArray);
+					srcObj = opMapEach(srcObj, mapObj.loc, mapObj.map);
 					log("Updated:", srcObj);
 					break;
 				case "FUNC1":
@@ -409,13 +493,38 @@
 					log("Op: changing loc separator to", mapObj.sep);
 					sep = mapObj.sep;
 					break;
+				case "IF":
+					log("Op: if condition");
+					srcObj = opIf(srcObj, mapObj.condition, mapObj.trueMap, mapObj.falseMap);
+					log("Updated:", srcObj);
+					break;
+				case "IFEXISTS":
+					log("Op: if exists", mapObj.loc);
+					srcObj = opIfExists(srcObj, mapObj.loc, mapObj.trueMap, mapObj.falseMap);
+					log("Updated:", srcObj);
+					break;
+				case "IFEQUAL":
+					log("Op: if loc", mapObj.loc, "equal to", mapObj.val);
+					srcObj = opIfEqual(srcObj, mapObj.loc, mapObj.val, mapObj.trueMap, mapObj.falseMap);
+					log("Updated:", srcObj);
+					break;
+				case "IFTYPE":
+					log("Op: if loc", mapObj.loc, "has type of:", mapObj.typeStr);
+					srcObj = opIfType(srcObj, mapObj.loc, mapObj.typeStr, mapObj.trueMap, mapObj.falseMap);
+					log("Updated:", srcObj);
+					break;
+				case "IFFUNC":
+					log("Op: if func returns true for loc", mapObj.loc);
+					srcObj = opIfFunc(srcObj, mapObj.loc, mapObj.fn, mapObj.parms, mapObj.trueMap, mapObj.falseMap);
+					log("Updated:", srcObj);
+					break;
 			}
 		}
 		return srcObj;
 	}
 
 	JSMapr.prototype.map = function(srcObj) {
-		return doMap(srcObj, mapArray);
+		return doMap(srcObj, mapCommands);
 	};
 
 }());
@@ -448,12 +557,12 @@ JSMapr.MAKEARRAY = function(loc) {
 	return { "op": "MAKEARRAY", "loc": loc };
 };
 
-JSMapr.MAP1 = function(loc, mapArray) {
-	return { "op": "MAP1", "loc": loc, "mapArray": mapArray };
+JSMapr.MAP1 = function(loc, map) {
+	return { "op": "MAP1", "loc": loc, "map": map };
 };
 
-JSMapr.MAPEACH = function(loc, mapArray) {
-	return { "op": "MAPEACH", "loc": loc, "mapArray": mapArray };
+JSMapr.MAPEACH = function(loc, map) {
+	return { "op": "MAPEACH", "loc": loc, "map": map };
 };
 
 JSMapr.FUNC1 = function(loc, fn, parms) {
@@ -466,6 +575,26 @@ JSMapr.FUNCEACH = function(loc, fn, parms) {
 
 JSMapr.EXEC = function(fn, parms) {
 	return { "op": "EXEC", "fn": fn, "parms": parms };
+};
+
+JSMapr.IF = function(condition, trueMap, falseMap) {
+	return { "op": "IF", "condition": condition, "trueMap": trueMap, "falseMap": falseMap };
+};
+
+JSMapr.IFEXISTS = function(loc, trueMap, falseMap) {
+	return { "op": "IFEXISTS", "loc": loc, "trueMap": trueMap, "falseMap": falseMap };
+};
+
+JSMapr.IFEQUAL = function(loc, val, trueMap, falseMap) {
+	return { "op": "IFEQUAL", "loc": loc, "val": val, "trueMap": trueMap, "falseMap": falseMap };
+};
+
+JSMapr.IFTYPE = function(loc, typeStr, trueMap, falseMap) {
+	return { "op": "IFTYPE", "loc": loc, "typeStr": typeStr, "trueMap": trueMap, "falseMap": falseMap };
+};
+
+JSMapr.IFFUNC = function(loc, fn, parms, trueMap, falseMap) {
+	return { "op": "IFFUNC", "loc": loc, "fn": fn, "parms": parms, "trueMap": trueMap, "falseMap": falseMap };
 };
 
 JSMapr.LOCSEPARATOR = function(sep) {
