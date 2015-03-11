@@ -118,7 +118,43 @@ Usage:
 myObj = mapr.map(myObj);
 ```
 
-## Map Commands - TBD
+## Map Commands (more details to be added)
 
+### JSMapr.ADD(loc, elemToAdd)
+Add a specified object/value at a specific location.
 
+### JSMapr.DEL(loc)
+Delete an element/subtree at a specific location.
 
+### JSMapr.COPY(srcLoc, destLoc)
+Copy the element/subtree at destLoc to srcLoc.
+
+### JSMapr.MOVE(srcLoc, destLoc)
+Move the element/subtree at destLoc to srcLoc.
+
+### JSMapr.TOSTRING(loc)
+Modify the element at the specified location by running .toString() on it.
+
+### JSMapr.STRINGIFY(loc)
+Stringify the element/object at the specified location.
+
+### JSMapr.MAKEARRAY(loc)
+If not an array already, convert the specified location to an array. If there is no element there, make it an empty array. If there is a value/object, make it a single element array. If it is already an array, do nothing.
+
+### JSMapr.MAP1(loc, map)
+Perform a mapping operation at the specified location.
+
+### JSMapr.MAPEACH(loc, map)
+If the specified location is an array, run the mapping operation on each of its elements.
+
+### JSMapr.FUNC1(loc, fn, parms)
+Run a function with optional parameters at the specified location, replacing that location with the return value of the function.
+
+### JSMapr.FUNCEACH(loc, fn, parms)
+If the specified location is an array, run the function with optional parameters on each of its elements, replacing each element with the return value of the function.
+
+### JSMapr.EXEC(fn, parms)
+Run the specified function on the entire object, replacing the object with the return value of the function.
+
+### JSMapr.LOCSEPARATOR(sep)
+Change the location separator for operations going forward.
