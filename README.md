@@ -60,7 +60,7 @@ myObj = mapr.map(myObj);
 //           "addressType": "HOME"
 //       },
 //       {
-//           "addr": "10 S Almaden Blvd",
+//           "streetAddress": "10 S Almaden Blvd",
 //           "city": "San Jose",
 //           "state": "CA",
 //           "zip": "95113",
