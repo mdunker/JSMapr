@@ -153,6 +153,9 @@ Run a function with optional parameters at the specified location, replacing tha
 ### JSMapr.FUNCEACH(loc, fn, parms)
 If the specified location is an array, run the function with optional parameters on each of its elements, replacing each element with the return value of the function.
 
+### JSMapr.SORTARRAY(loc, fn)
+If the specified location is an array, use the supplied (sort function)[https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/)sort to sort the elements of the array.
+
 ### JSMapr.EXEC(fn, parms)
 Run the specified function on the entire object, replacing the object with the return value of the function.
 

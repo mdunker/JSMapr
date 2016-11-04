@@ -360,6 +360,20 @@
 		return srcObj;
 	}
 
+	function opSortArray(srcObj, loc, fn) {
+		// if not valid location, abort
+		if (!isLocValid(loc)) return srcObj;
+
+		var ary = getObjectAtLoc(srcObj, loc);
+
+		// ary should be an array
+		if (ary !== undefined && ary.constructor === Array) {
+			ary.sort(fn)
+			srcObj = setObjectAtLoc(srcObj, loc, ary);
+		}
+		return srcObj;
+	}
+
 	// returns new srcObj because executed function could change its reference
 	function opExec(srcObj, fn, parms) {
 		return fn(srcObj, parms);
@@ -484,6 +498,11 @@
 					srcObj = opFuncEach(srcObj, mapObj.loc, mapObj.fn, mapObj.parms);
 					log("Updated:", srcObj);
 					break;
+				case "SORTARRAY":
+					log("Op: sorting the elements of the array at", mapObj.loc);
+					srcObj = opSortArray(srcObj, mapObj.loc, mapObj.fn);
+					log("Updated:", srcObj);
+					break;
 				case "EXEC":
 					log("Op: execing function on object");
 					srcObj = opExec(srcObj, mapObj.fn, mapObj.parms);
@@ -571,6 +590,10 @@ JSMapr.FUNC1 = function(loc, fn, parms) {
 
 JSMapr.FUNCEACH = function(loc, fn, parms) {
 	return { "op": "FUNCEACH", "loc": loc, "fn": fn, "parms": parms };
+};
+
+JSMapr.SORTARRAY = function(loc, fn) {
+	return { "op": "SORTARRAY", "loc": loc, "fn": fn };
 };
 
 JSMapr.EXEC = function(fn, parms) {
