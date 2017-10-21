@@ -10,7 +10,7 @@
 	function log() {
 		if (isFunction(logFunc)) {
 			var str = "";
-			for (i = 0, len=arguments.length; i < len; i++) {
+			for (var i = 0, len=arguments.length; i < len; i++) {
 				var arg = arguments[i];
 				if (isObjectOrArray(arg)) {
 					str += JSON.stringify(arg) + " ";
@@ -81,7 +81,7 @@
 
 		for (var i=1, aryLen = locArray.length; i < aryLen; i++) {
 			// each location part must have some length
-			if ((locArray[i]).length == 0) return false;
+			if ((locArray[i]).length === 0) return false;
 		}
 		return true;
 	}
@@ -368,7 +368,7 @@
 
 		// ary should be an array
 		if (ary !== undefined && ary.constructor === Array) {
-			ary.sort(fn)
+			ary.sort(fn);
 			srcObj = setObjectAtLoc(srcObj, loc, ary);
 		}
 		return srcObj;
