@@ -81,7 +81,7 @@
 
 		for (var i=1, aryLen = locArray.length; i < aryLen; i++) {
 			// each location part must have some length
-			if ((locArray[i]).length == 0) return false;
+			if ((locArray[i]).length === 0) return false;
 		}
 		return true;
 	}
@@ -303,16 +303,17 @@
 
 			if (destVal === undefined || destVal === null) {
 				// nothing there, add as single element array
-				srcObj = setObjectAtLoc(srcObj, loc, [ val ]);
+				srcObj = setObjectAtLoc(srcObj, destLoc, [ val ]);
+			        deleteObjectAtLoc(srcObj, srcLoc);
 			} else if (isArray(destVal)) {
 				// already an array, push new element
 				destVal.push(val);
+			        deleteObjectAtLoc(srcObj, srcLoc);
 			} else if (isObject(destVal)) {
 				// this is an object, do nothing
 			} else {
 				// something else, do nothing
 			}
-			deleteObjectAtLoc(srcObj, srcLoc);
 		}
 		return srcObj;
 	}	
@@ -415,7 +416,7 @@
 
 		// ary should be an array
 		if (ary !== undefined && ary.constructor === Array) {
-			ary.sort(fn)
+			ary.sort(fn);
 			srcObj = setObjectAtLoc(srcObj, loc, ary);
 		}
 		return srcObj;
