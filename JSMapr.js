@@ -270,6 +270,54 @@
 		return srcObj;
 	}
 
+	function opAddToArray(srcObj, loc, elemToAdd) {
+		// if not valid location, abort
+		if (!isLocValid(loc)) return srcObj;
+
+		var val = getObjectAtLoc(srcObj, loc);
+		if (val === undefined || val === null) {
+			// nothing there, add as single element array
+			srcObj = setObjectAtLoc(srcObj, loc, [ elemToAdd ]);
+		} else if (isArray(val)) {
+			// already an array, push new element
+			val.push(elemToAdd);
+		} else if (isObject(val)) {
+			// this is an object, do nothing
+		} else {
+			// something else, do nothing
+		}
+		return srcObj;
+	}
+
+	function opMoveToArray(srcObj, srcLoc, destLoc) {
+		// if not valid locations, abort
+		if (!isLocValid(srcLoc) || !isLocValid(destLoc)) return srcObj;
+		// if the same location, nothing to do
+		if (srcLoc == destLoc) return srcObj;
+		// if destLoc is child of srcLoc, can't do that move
+		if (isSubLoc(srcLoc, destLoc)) return srcObj;
+
+		var val = getObjectAtLoc(srcObj, srcLoc);
+		var destVal = getObjectAtLoc(srcObj, destLoc);
+		if (val !== undefined) {
+
+			if (destVal === undefined || destVal === null) {
+				// nothing there, add as single element array
+				srcObj = setObjectAtLoc(srcObj, destLoc, [ val ]);
+			        deleteObjectAtLoc(srcObj, srcLoc);
+			} else if (isArray(destVal)) {
+				// already an array, push new element
+				destVal.push(val);
+			        deleteObjectAtLoc(srcObj, srcLoc);
+			} else if (isObject(destVal)) {
+				// this is an object, do nothing
+			} else {
+				// something else, do nothing
+			}
+		}
+		return srcObj;
+	}	
+
 	function opMakeArray(srcObj, loc) {
 		// if not valid location, abort
 		if (!isLocValid(loc)) return srcObj;
@@ -448,6 +496,16 @@
 					srcObj = opAdd(srcObj, mapObj.loc, mapObj.elemToAdd);
 					log("Updated:", srcObj);
 					break;
+				case "ADDTOARRAY":
+					log("Op: adding object to array at", mapObj.loc);
+					srcObj = opAddToArray(srcObj, mapObj.loc, mapObj.elemToAdd);
+					log("Updated:", srcObj);
+					break;
+				case "MOVETOARRAY":
+					log("Op: moving", mapObj.srcLoc, "into array at", mapObj.destLoc);
+					srcObj = opMoveToArray(srcObj, mapObj.srcLoc, mapObj.destLoc);
+					log("Updated:", srcObj);
+					break;
 				case "DEL":
 					log("Op: deleting", mapObj.loc);
 					srcObj = opDel(srcObj, mapObj.loc);
@@ -574,6 +632,14 @@ JSMapr.STRINGIFY = function(loc) {
 
 JSMapr.MAKEARRAY = function(loc) {
 	return { "op": "MAKEARRAY", "loc": loc };
+};
+
+JSMapr.ADDTOARRAY = function(loc, elemToAdd) {
+	return { "op": "ADDTOARRAY", "loc": loc, "elemToAdd": elemToAdd };
+};
+
+JSMapr.MOVETOARRAY = function(srcLoc, destLoc) {
+	return { "op": "MOVETOARRAY", "srcLoc": srcLoc, "destLoc": destLoc };
 };
 
 JSMapr.MAP1 = function(loc, map) {

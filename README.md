@@ -89,7 +89,7 @@ By default, there is no logging function, and logging will not be done. The log 
 Usage:
 
 ```js
-mapr.setLoggingFunction(function(str) { console.log(str); });
+mapr.setLoggingFunc(function(str) { console.log(str); });
 ```
 
 ### setMapCommands - set the mapping command(s)
@@ -141,6 +141,12 @@ Stringify the element/object at the specified location.
 ### JSMapr.MAKEARRAY(loc)
 If not an array already, convert the specified location to an array. If there is no element there, make it an empty array. If there is a value/object, make it a single element array. If it is already an array, do nothing.
 
+### JSMapr.ADDTOARRAY(loc, elemToAdd)
+Add to the array at the specified location the object/value. If the specified location is not an array already, add the object/value as a single element array.
+
+### JSMapr.MOVETOARRAY(srcLoc, destLoc)
+Move the element/subtree at srcLoc into the array at destLoc. If destLoc is empty, add the element/subtree at srcLoc as a single element array to destLoc.
+
 ### JSMapr.MAP1(loc, map)
 Perform a mapping operation at the specified location.
 
@@ -158,6 +164,21 @@ If the specified location is an array, use the supplied [sort function](https://
 
 ### JSMapr.EXEC(fn, parms)
 Run the specified function on the entire object, replacing the object with the return value of the function.
+
+### JSMapr.IFEXISTS(srcObj, loc, trueMap, falseMap)
+If an element/object exists at loc perform the trueMap mapping operation, otherwise perform the falseMap mapping operation.
+
+### JSMapr.IFEQUAL(srcObj, loc, val, trueMap, falseMap)
+If the element at loc is equal to val perform the trueMap mapping operation, otherwise perform the falseMap mapping operation.
+
+### JSMapr.IFTYPE(srcObj, loc, typeStr, trueMap, falseMap)
+If the element at loc is one of the space delimited types in typeStr perform the trueMap mapping operation, otherwise perform the falseMap mapping operation.
+
+### JSMapr.IF(condition, trueMap, falseMap)
+If the condition is true perform the trueMap mapping operation and if the condition is false perform the falseMap mapping operation.
+
+### JSMapr.IFFUNC(loc, fn, parms, trueMap, falseMap)
+Run the specified function with parms and if it returns true perform the trueMap mapping operation otherwise perform the falseMap mapping operation.
 
 ### JSMapr.LOCSEPARATOR(sep)
 Change the location separator for operations going forward.
