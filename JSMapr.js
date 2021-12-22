@@ -28,11 +28,11 @@
 	}
 
 	function isArray(v) {
-		return (v && v.constructor === Array);
+		return (v && v.constructor.name === "Array");
 	}
 
 	function isObject(v) {
-		return (v && v.constructor !== Array && v === Object(v));
+		return (v && v.constructor.name !== "Array" && v === Object(v));
 	}
 
 	function isObjectOrArray(v) {
